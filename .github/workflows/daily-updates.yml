@@ -114,6 +114,7 @@ jobs:
           git config --local user.name "GitHub Action"
           git add -A
           git commit -m "⬆️ Update dependencies to latest versions - $(date '+%Y-%m-%d')" || exit 0
+          git pull --rebase origin main
           git push
 
       - name: Create PR for dependency updates

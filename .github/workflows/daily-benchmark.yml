@@ -233,6 +233,7 @@ jobs:
           git config --local user.name "GitHub Action"
           git add README.md previous-benchmark-results.json
           git commit -m "📊 Update benchmark results - $(date '+%Y-%m-%d') [${{ needs.analysis.outputs.tag-name }}]"
+          git pull --rebase origin main
           git push
 
       - name: Create or update GitHub release

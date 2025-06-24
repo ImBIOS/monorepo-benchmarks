@@ -1,0 +1,37 @@
+version: 2
+updates:
+  # Main package.json dependencies
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'daily'
+      time: '05:00'
+    open-pull-requests-limit: 5
+    reviewers:
+      - '@dependabot'
+    commit-message:
+      prefix: '⬆️'
+      include: 'scope'
+    groups:
+      build-tools:
+        patterns:
+          - 'nx'
+          - 'turbo'
+          - 'lerna'
+          - 'lage'
+      dev-dependencies:
+        patterns:
+          - '@types/*'
+          - 'typescript'
+        update-types:
+          - 'minor'
+          - 'patch'
+
+  # GitHub Actions
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    commit-message:
+      prefix: '⬆️'
+      include: 'scope'

@@ -47,3 +47,6 @@ Thumbs.db
 turbo-build.log
 
 .nx
+
+# Release automation files
+release-description.md

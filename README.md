@@ -1,8 +1,8 @@
-# Benchmarking Nx, Turbo, and Lerna
-
+# Benchmarking Nx, Turbo, Lerna, and Lage
+<!--
 Recording:
 
-![nx-turbo-recording](./readme-assets/turbo-nx-perf.gif)
+![nx-turbo-recording](./readme-assets/turbo-nx-perf.gif) -->
 
 Repo contains:
 
@@ -17,40 +17,20 @@ ordinary. And, the bigger the repo, the bigger the difference in performance bet
 The repo has Nx, Turbo, Lerna and Lage enabled. They don't affect each other. You can remove one without affecting the
 other one.
 
-## Benchmark & Results (May 10, 2025)
+## Benchmark & Results (June 24, 2025)
 
-Run `npm run benchmark`. The benchmark will warm the cache of all the tools. We benchmark how quickly
+Run `pnpm run benchmark`. The benchmark will warm the cache of all the tools. We benchmark how quickly
 Turbo/Nx/Lage/Lerna can figure out what needs to be restored from the cache and restores it.
 
-These are the numbers using my machine:
+These are the numbers using GitHub Actions runner:
 
-* average lage time is: 12795.8
-* average turbo time is: 3902.9
-* average lerna (powered by nx) time is: 1329.1
-* average nx time is: 273.3
-* nx is 46.8196121478229x faster than lage
-* nx is 14.28064398097329x faster than turbo
-* nx is 4.863154043175997x faster than lerna (powered by nx)
-
-### Why is Nx faster than Turbo
-
-Nx is in many ways akin to React in that it's doing tree diffing when restoring files from the cache. If the right files
-are in the right place, Nx won't touch them. Turbo blows everything away every time. Nx's version isn't just faster,
-it's also more useful (again similarly to tree diffing in React). Blowing everything away on every restoration means
-that if any tools watch the folders (which is common when you build large apps or build microfrontends), they are going
-to get confused or triggered for no reason. This is similar to how recreating the DOM from scratch isn't just slower,
-but results in worse UX.
-
-If you remove the folders before every invocation (Nx will have to recreate all the folders the same way, so its
-smartness doesn't help it), Nx is still 2.2 times faster than Turbo. So depending on the state of your repo invoking Nx
-will be from 2.2 times to 7.5 times faster than invoking Turbo (on a mac).
-
-Is Nx always faster? No. Nx uses Node.js, so it takes about 70ms (on a mac) to boot, regardless of what you do. You
-build 1000 projects, takes 70ms. You build 1 project, it takes 70ms. If you have a repo with say 10 files in it, running
-Turbo will likely be faster because it boots faster.
-
-Yarn, npm, pnpm have a similar boot time to Nx, and folks don't mind. And, of course, it's worth asking whether a
-high-performance build tool is even required for a repo with 10 files in it.
+* average lage time is: 6539.1
+* average turbo time is: 49806.2
+* average lerna (powered by nx) time is: 1810.1
+* average nx time is: 739.6
+* nx is 8.8x faster than lage
+* nx is 67.3x faster than turbo
+* nx is 2.4x faster than lerna (powered by nx)
 
 ### Does this performance difference matter in practice?
 
@@ -79,12 +59,86 @@ and a lot worse, to be honest) from running the same command without Turbo.
 
 A lot of Nx users don't even know they use Nx, or even what Nx is. Things they run look the same, they just got faster.
 
-## Lerna and Nx
+## Automated Daily Benchmarks
 
-Lerna 5.1 adds the ability to use Nx for task orchestration and computation caching (in addition to `p-map` and `p-queue`, which it had before).
-Given that Lerna uses Nx to run tasks, unsurprisingly, the numbers for
-Lerna and Nx are very similar--it's the same powerful task orchestrator under the hood. This also means that Lerna supports
-distributed tasks execution (see above) and that it captures terminal output correctly.
+This repository runs automated benchmarks daily to track performance trends over time:
+
+### 🤖 Automation Features
+
+* **Daily Benchmarks**: Runs at 6 AM UTC daily via GitHub Actions
+* **Dependency Updates**: Automated daily updates to latest versions of all tools (nx, turbo, lerna, lage)
+* **Performance Monitoring**: Detects significant performance regressions (>10% change)
+* **Automatic README Updates**: Always updates the "Benchmark & Results" section with latest data
+* **GitHub Releases**: Creates/updates releases with version-based tags for easy historical tracking
+* **Issue Creation**: Automatically creates GitHub issues for performance regressions
+
+### 🏷️ Release Management
+
+Each benchmark run automatically creates or updates a GitHub release:
+
+* **Version-based Tags**: Tags include all tool versions (e.g., `benchmark-nx21.0.3-turbo2.5.3-lerna8.2.2-lage2.14.6`)
+* **Rich Release Notes**: Detailed performance results, tool versions, and raw benchmark data
+* **Historical Tracking**: Easy to find and compare results across different tool versions
+* **Automatic Updates**: If a release already exists for the current tool versions, it gets updated
+
+### 📊 Manual Benchmark
+
+You can also run benchmarks manually:
+
+```bash
+# Regular benchmark with console output
+pnpm run benchmark
+
+# JSON benchmark for automation (TypeScript compiled)
+pnpm run benchmark:json
+
+# TypeScript development (run directly with tsx)
+pnpm run benchmark:json:ts
+```
+
+### 🛠️ TypeScript Development
+
+The automation scripts are built with TypeScript for better type safety and developer experience:
+
+**Development Commands:**
+
+* `pnpm run benchmark:json:ts` - Run TypeScript benchmark directly with tsx
+* `pnpm run test:automation:ts` - Run TypeScript tests directly
+* `pnpm run build:scripts` - Compile TypeScript scripts to JavaScript
+* `pnpm run build:scripts:watch` - Watch mode compilation
+* `pnpm run compare:results:ts` - Run TypeScript comparison directly
+* `pnpm run create:release:ts` - Generate release information from benchmark results
+
+**File Structure:**
+
+* **`benchmark-json.ts`** - TypeScript version with strict types
+* **`scripts/compare-and-update-readme.ts`** - Compares results and updates README
+* **`scripts/create-release.ts`** - Generates GitHub releases with version-based tags
+* **`scripts/test-compare.ts`** - Test suite for automation functions
+* **`scripts/types.ts`** - Shared type definitions and interfaces
+* **`dist/*.js`** - Compiled JavaScript (auto-generated, ignored by git)
+
+**TypeScript Configuration:**
+
+* **`tsconfig.scripts.json`** - TypeScript config for automation scripts
+* Uses strict mode, modern target (ES2020), CommonJS modules for Node.js compatibility
+
+### 🔧 Dependency Management
+
+The repository uses:
+
+* **Dependabot**: For automated dependency PRs
+* **Daily Update Workflow**: Aggressive updates to ensure we're testing latest versions
+* **Compatibility Testing**: Benchmarks run after updates to ensure everything works
+
+### 📈 Performance Tracking
+
+Results are automatically tracked and compared:
+
+* Stores previous results for comparison
+* Detects trends and significant changes
+* Updates README only when meaningful changes occur
+* Creates alerts for regressions
 
 ## Found an issue? Send a PR
 

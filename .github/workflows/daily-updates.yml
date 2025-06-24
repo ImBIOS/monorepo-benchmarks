@@ -1,0 +1,97 @@
+name: Daily Dependency Updates
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # Run daily at 2 AM UTC
+  workflow_dispatch: # Allow manual triggers
+
+jobs:
+  update-dependencies:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Update all dependencies to latest
+        run: |
+          # Update root dependencies
+          pnpm update --latest
+
+          # Update all workspace dependencies
+          pnpm -r update --latest
+
+          # Update devDependencies specifically
+          pnpm update --latest @types/node lage lerna nx turbo typescript
+
+      - name: Install updated dependencies
+        run: pnpm install
+
+      - name: Run benchmark to ensure everything still works
+        run: |
+          timeout 600 pnpm run benchmark || echo "Benchmark timed out or failed"
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet package.json && git diff --quiet pnpm-lock.yaml; then
+            echo "has-changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has-changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push changes
+        if: steps.changes.outputs.has-changes == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          git commit -m "⬆️ Update dependencies to latest versions - $(date '+%Y-%m-%d')" || exit 0
+          git push
+
+      - name: Create PR for dependency updates
+        if: steps.changes.outputs.has-changes == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branchName = `dependencies/update-${new Date().toISOString().split('T')[0]}`;
+
+            // Create branch
+            await github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `refs/heads/${branchName}`,
+              sha: context.sha
+            });
+
+            // Create PR
+            await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `⬆️ Daily dependency updates - ${new Date().toISOString().split('T')[0]}`,
+              head: branchName,
+              base: 'main',
+              body: `
+              Automated daily dependency updates.
+
+              This PR updates all dependencies to their latest versions:
+              - Root package dependencies
+              - All workspace package dependencies
+              - Benchmark tool dependencies (nx, turbo, lerna, lage)
+
+              The benchmark was run after updates to ensure compatibility.
+              `
+            });

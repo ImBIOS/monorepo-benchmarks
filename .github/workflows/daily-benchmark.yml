@@ -1,0 +1,204 @@
+name: Daily Benchmark
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # Run daily at 6 AM UTC
+  workflow_dispatch: # Allow manual triggers
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build TypeScript scripts
+        run: pnpm run build:scripts
+
+      - name: Run benchmark with JSON output
+        id: benchmark
+        run: |
+          node dist/benchmark-json.js > benchmark-results.json
+          echo "RESULTS_JSON<<EOF" >> $GITHUB_ENV
+          cat benchmark-results.json >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Read previous results
+        id: previous-results
+        run: |
+          if [ -f "previous-benchmark-results.json" ]; then
+            echo "PREVIOUS_RESULTS_JSON<<EOF" >> $GITHUB_ENV
+            cat previous-benchmark-results.json >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+          else
+            echo "PREVIOUS_RESULTS_JSON={}" >> $GITHUB_ENV
+          fi
+
+      - name: Compare results and update README
+        id: compare
+        run: |
+          output=$(node dist/scripts/compare-and-update-readme.js)
+          echo "$output"
+          if echo "$output" | grep -q "readme-updated=true"; then
+            echo "readme-updated=true" >> $GITHUB_OUTPUT
+          else
+            echo "readme-updated=false" >> $GITHUB_OUTPUT
+          fi
+          if echo "$output" | grep -q "performance-regression=true"; then
+            echo "performance-regression=true" >> $GITHUB_OUTPUT
+          else
+            echo "performance-regression=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          CURRENT_RESULTS: ${{ env.RESULTS_JSON }}
+          PREVIOUS_RESULTS: ${{ env.PREVIOUS_RESULTS_JSON }}
+
+      - name: Save current results
+        run: |
+          cp benchmark-results.json previous-benchmark-results.json
+
+      - name: Prepare release information
+        id: release-info
+        run: |
+          output=$(node dist/scripts/create-release.js)
+          echo "$output"
+          # Parse outputs
+          tag_name=$(echo "$output" | grep "tag-name=" | cut -d'=' -f2)
+          release_name=$(echo "$output" | grep "release-name=" | cut -d'=' -f2)
+          release_exists=$(echo "$output" | grep "release-exists=" | cut -d'=' -f2)
+          description_file=$(echo "$output" | grep "release-description-file=" | cut -d'=' -f2)
+
+          echo "tag-name=$tag_name" >> $GITHUB_OUTPUT
+          echo "release-name=$release_name" >> $GITHUB_OUTPUT
+          echo "release-exists=$release_exists" >> $GITHUB_OUTPUT
+          echo "description-file=$description_file" >> $GITHUB_OUTPUT
+        env:
+          BENCHMARK_RESULTS: ${{ env.RESULTS_JSON }}
+
+      - name: Commit and push changes
+        if: steps.compare.outputs.readme-updated == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add README.md previous-benchmark-results.json
+          git commit -m "📊 Update benchmark results - $(date '+%Y-%m-%d') [${{ steps.release-info.outputs.tag-name }}]"
+          git push
+
+      - name: Create or update GitHub release
+        if: always() # Always create/update release regardless of README updates
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const tagName = '${{ steps.release-info.outputs.tag-name }}';
+            const releaseName = '${{ steps.release-info.outputs.release-name }}';
+            const releaseExists = '${{ steps.release-info.outputs.release-exists }}' === 'true';
+            const descriptionFile = '${{ steps.release-info.outputs.description-file }}';
+
+            let releaseBody = 'No benchmark results available.';
+            try {
+              releaseBody = fs.readFileSync(descriptionFile, 'utf8');
+            } catch (error) {
+              console.log('Could not read release description file:', error.message);
+            }
+
+            if (releaseExists) {
+              console.log(`Updating existing release with tag: ${tagName}`);
+
+              // Get the existing release
+              try {
+                const { data: release } = await github.rest.repos.getReleaseByTag({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  tag: tagName
+                });
+
+                // Update the existing release
+                await github.rest.repos.updateRelease({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  release_id: release.id,
+                  name: releaseName,
+                  body: releaseBody,
+                  prerelease: false
+                });
+
+                console.log('Successfully updated existing release');
+              } catch (error) {
+                console.log('Release tag exists but could not update release:', error.message);
+                console.log('This might be expected if it is a lightweight tag without a release');
+              }
+            } else {
+              console.log(`Creating new release with tag: ${tagName}`);
+
+              await github.rest.repos.createRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag_name: tagName,
+                name: releaseName,
+                body: releaseBody,
+                draft: false,
+                prerelease: false
+              });
+
+              console.log('Successfully created new release');
+            }
+
+      - name: Create issue on significant performance regression
+        if: steps.compare.outputs.performance-regression == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '⚠️ Performance Regression Detected';
+            const releaseTag = '${{ steps.release-info.outputs.tag-name }}';
+            const body = `
+            A significant performance regression has been detected in today's benchmark run.
+
+            **Release with results:** [${releaseTag}](https://github.com/${context.repo.owner}/${context.repo.repo}/releases/tag/${releaseTag})
+
+            **Current Results:**
+            ${process.env.RESULTS_JSON}
+
+            **Previous Results:**
+            ${process.env.PREVIOUS_RESULTS_JSON}
+
+            Please investigate the cause of this performance change.
+            `;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['performance', 'regression']
+            });

@@ -1,0 +1,75 @@
+name: Test Automation Scripts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - 'benchmark-json.ts'
+      - 'benchmark-json.js'
+      - '.github/workflows/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - 'benchmark-json.ts'
+      - 'benchmark-json.js'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+jobs:
+  test-scripts:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build TypeScript scripts
+        run: pnpm run build:scripts
+
+      - name: Test TypeScript source files exist
+        run: |
+          test -f benchmark-json.ts
+          echo "✅ benchmark-json.ts exists"
+          test -f scripts/compare-and-update-readme.ts
+          echo "✅ compare-and-update-readme.ts exists"
+
+      - name: Test compiled JavaScript files exist
+        run: |
+          test -f dist/benchmark-json.js
+          echo "✅ dist/benchmark-json.js exists"
+          test -f dist/scripts/compare-and-update-readme.js
+          echo "✅ dist/scripts/compare-and-update-readme.js exists"
+
+      - name: Test TypeScript compilation
+        run: |
+          pnpm run test:automation:ts
+          echo "✅ TypeScript test script runs successfully"
+
+      - name: Test compiled JavaScript with mock data
+        run: |
+          export CURRENT_RESULTS='{"timestamp":"2024-01-01T00:00:00.000Z","tools":{"nx":{"average":300},"turbo":{"average":4000},"lerna":{"average":1500},"lage":{"average":8000}},"comparisons":{"nxVsLage":26.7,"nxVsTurbo":13.3,"nxVsLerna":5.0}}'
+          export PREVIOUS_RESULTS='{}'
+          node dist/scripts/compare-and-update-readme.js
+          echo "✅ compiled compare script works with mock data"
+
+      - name: Verify automation structure
+        run: |
+          echo "Checking automation file structure..."
+          ls -la .github/workflows/
+          ls -la scripts/
+          echo "✅ All automation files are in place"

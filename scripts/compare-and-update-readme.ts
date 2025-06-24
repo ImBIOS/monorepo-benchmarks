@@ -1,9 +1,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { BenchmarkResults, ToolName, ComparisonOutputs } from './types';
+import type { BenchmarkResults, ComparisonOutputs, ToolName } from './types';
 
 // Threshold for significant performance change (10%)
 const PERFORMANCE_THRESHOLD = 0.1;
+// Threshold for detecting tool performance changes worth documenting (5%)
+const TOOL_SIGNIFICANCE_THRESHOLD = 0.05;
 
 function parseResults(resultsJson: string): BenchmarkResults | null {
   try {
@@ -93,12 +95,14 @@ function detectPerformanceRegression(
 
   // Check if NX performance degraded significantly
   const previousNxAverage = previous.tools.nx?.average;
-  const nxRegression = previousNxAverage !== undefined &&
+  const nxRegression =
+    previousNxAverage !== undefined &&
     isSignificantChange(
       current.tools.nx.average,
       previousNxAverage,
       PERFORMANCE_THRESHOLD
-    ) && current.tools.nx.average > previousNxAverage;
+    ) &&
+    current.tools.nx.average > previousNxAverage;
 
   // Check if any comparison ratios decreased significantly (meaning NX became relatively slower)
   const ratioRegression = Object.keys(current.comparisons).some((key) => {
@@ -141,7 +145,7 @@ function hasSignificantChanges(
     return isSignificantChange(
       current.tools[tool].average,
       previousValue,
-      0.05 // 5% threshold for significance
+      TOOL_SIGNIFICANCE_THRESHOLD
     );
   });
 }
@@ -157,7 +161,10 @@ function main(): ComparisonOutputs {
   }
 
   const shouldUpdate = shouldUpdateReadme(currentResults, previousResults);
-  const significantChanges = hasSignificantChanges(currentResults, previousResults);
+  const significantChanges = hasSignificantChanges(
+    currentResults,
+    previousResults
+  );
   const hasRegression = detectPerformanceRegression(
     currentResults,
     previousResults
@@ -165,7 +172,9 @@ function main(): ComparisonOutputs {
 
   if (shouldUpdate) {
     if (significantChanges) {
-      console.log('Significant performance changes detected, updating README...');
+      console.log(
+        'Significant performance changes detected, updating README...'
+      );
     } else {
       console.log('Updating README with latest benchmark results...');
     }
@@ -204,12 +213,12 @@ if (require.main === module) {
 }
 
 export {
-  parseResults,
-  isSignificantChange,
-  formatResults,
-  updateReadme,
   detectPerformanceRegression,
-  shouldUpdateReadme,
+  formatResults,
   hasSignificantChanges,
+  isSignificantChange,
   main,
+  parseResults,
+  shouldUpdateReadme,
+  updateReadme,
 };

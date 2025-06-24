@@ -1,6 +1,5 @@
-import * as fs from 'fs';
-import * as path from 'path';
 import { execSync } from 'child_process';
+import * as fs from 'fs';
 import type { BenchmarkResults, PackageVersions, ReleaseInfo } from './types';
 
 function getPackageVersions(): PackageVersions {
@@ -17,11 +16,13 @@ function getPackageVersions(): PackageVersions {
       const version =
         parsed[0]?.dependencies?.[packageName]?.version ||
         packageJson.devDependencies?.[packageName]?.replace(/[\^~]/, '') ||
+        packageJson.dependencies?.[packageName]?.replace(/[\^~]/, '') ||
         'unknown';
       return version;
     } catch (error) {
       return (
         packageJson.devDependencies?.[packageName]?.replace(/[\^~]/, '') ||
+        packageJson.dependencies?.[packageName]?.replace(/[\^~]/, '') ||
         'unknown'
       );
     }
@@ -164,9 +165,9 @@ if (require.main === module) {
 }
 
 export {
-  getPackageVersions,
-  generateTag,
+  checkIfReleaseExists,
   formatReleaseDescription,
   generateReleaseInfo,
-  checkIfReleaseExists,
+  generateTag,
+  getPackageVersions,
 };

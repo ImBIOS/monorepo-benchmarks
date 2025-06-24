@@ -18,6 +18,6 @@
     "incremental": true,
     "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
-  "include": ["scripts/**/*", "benchmark-json.ts", "benchmark.ts"],
+  "include": ["scripts/**/*", "benchmark-json.ts"],
   "exclude": ["node_modules", "dist", "apps/**/*", "packages/**/*"]
 }

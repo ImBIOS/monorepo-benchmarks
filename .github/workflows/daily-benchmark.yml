@@ -6,9 +6,10 @@ on:
   workflow_dispatch: # Allow manual triggers
 
 jobs:
-  benchmark:
+  setup:
     runs-on: ubuntu-latest
-
+    outputs:
+      cache-hit: ${{ steps.cache.outputs.cache-hit }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,6 +31,7 @@ jobs:
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
       - name: Setup pnpm cache
+        id: cache
         uses: actions/cache@v4
         with:
           path: ${{ env.STORE_PATH }}
@@ -43,10 +45,100 @@ jobs:
       - name: Build TypeScript scripts
         run: pnpm run build:scripts
 
+      - name: Upload built scripts
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-scripts
+          path: dist/
+          retention-days: 1
+
+  benchmark:
+    runs-on: ubuntu-latest
+    needs: setup
+    outputs:
+      results-available: ${{ steps.benchmark.conclusion == 'success' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Restore pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Download built scripts
+        uses: actions/download-artifact@v4
+        with:
+          name: built-scripts
+          path: dist/
+
       - name: Run benchmark with JSON output
         id: benchmark
         run: |
           node dist/benchmark-json.js > benchmark-results.json
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: benchmark-results.json
+          retention-days: 1
+
+  analysis:
+    runs-on: ubuntu-latest
+    needs: benchmark
+    if: needs.benchmark.outputs.results-available != 'false'
+    outputs:
+      readme-updated: ${{ steps.compare.outputs.readme-updated }}
+      performance-regression: ${{ steps.compare.outputs.performance-regression }}
+      tag-name: ${{ steps.release-info.outputs.tag-name }}
+      release-name: ${{ steps.release-info.outputs.release-name }}
+      release-exists: ${{ steps.release-info.outputs.release-exists }}
+      description-file: ${{ steps.release-info.outputs.description-file }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Download built scripts
+        uses: actions/download-artifact@v4
+        with:
+          name: built-scripts
+          path: dist/
+
+      - name: Download benchmark results
+        uses: actions/download-artifact@v4
+        with:
+          name: benchmark-results
+
+      - name: Read current results
+        run: |
           echo "RESULTS_JSON<<EOF" >> $GITHUB_ENV
           cat benchmark-results.json >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
@@ -103,25 +195,55 @@ jobs:
         env:
           BENCHMARK_RESULTS: ${{ env.RESULTS_JSON }}
 
+      - name: Upload analysis artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: analysis-results
+          path: |
+            previous-benchmark-results.json
+            ${{ steps.release-info.outputs.description-file }}
+            README.md
+          retention-days: 1
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: [benchmark, analysis]
+    if: always() && needs.analysis.result == 'success'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Download analysis results
+        uses: actions/download-artifact@v4
+        with:
+          name: analysis-results
+
+      - name: Download benchmark results
+        uses: actions/download-artifact@v4
+        with:
+          name: benchmark-results
+
       - name: Commit and push changes
-        if: steps.compare.outputs.readme-updated == 'true'
+        if: needs.analysis.outputs.readme-updated == 'true'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add README.md previous-benchmark-results.json
-          git commit -m "📊 Update benchmark results - $(date '+%Y-%m-%d') [${{ steps.release-info.outputs.tag-name }}]"
+          git commit -m "📊 Update benchmark results - $(date '+%Y-%m-%d') [${{ needs.analysis.outputs.tag-name }}]"
           git push
 
       - name: Create or update GitHub release
-        if: always() # Always create/update release regardless of README updates
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const tagName = '${{ steps.release-info.outputs.tag-name }}';
-            const releaseName = '${{ steps.release-info.outputs.release-name }}';
-            const releaseExists = '${{ steps.release-info.outputs.release-exists }}' === 'true';
-            const descriptionFile = '${{ steps.release-info.outputs.description-file }}';
+            const tagName = '${{ needs.analysis.outputs.tag-name }}';
+            const releaseName = '${{ needs.analysis.outputs.release-name }}';
+            const releaseExists = '${{ needs.analysis.outputs.release-exists }}' === 'true';
+            const descriptionFile = '${{ needs.analysis.outputs.description-file }}';
 
             let releaseBody = 'No benchmark results available.';
             try {
@@ -133,7 +255,6 @@ jobs:
             if (releaseExists) {
               console.log(`Updating existing release with tag: ${tagName}`);
 
-              // Get the existing release
               try {
                 const { data: release } = await github.rest.repos.getReleaseByTag({
                   owner: context.repo.owner,
@@ -141,7 +262,6 @@ jobs:
                   tag: tagName
                 });
 
-                // Update the existing release
                 await github.rest.repos.updateRelease({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
@@ -173,22 +293,43 @@ jobs:
             }
 
       - name: Create issue on significant performance regression
-        if: steps.compare.outputs.performance-regression == 'true'
+        if: needs.analysis.outputs.performance-regression == 'true'
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('fs');
             const title = '⚠️ Performance Regression Detected';
-            const releaseTag = '${{ steps.release-info.outputs.tag-name }}';
+            const releaseTag = '${{ needs.analysis.outputs.tag-name }}';
+
+            let currentResults = 'Not available';
+            let previousResults = 'Not available';
+
+            try {
+              currentResults = fs.readFileSync('benchmark-results.json', 'utf8');
+            } catch (error) {
+              console.log('Could not read current results:', error.message);
+            }
+
+            try {
+              previousResults = fs.readFileSync('previous-benchmark-results.json', 'utf8');
+            } catch (error) {
+              console.log('Could not read previous results:', error.message);
+            }
+
             const body = `
             A significant performance regression has been detected in today's benchmark run.
 
             **Release with results:** [${releaseTag}](https://github.com/${context.repo.owner}/${context.repo.repo}/releases/tag/${releaseTag})
 
             **Current Results:**
-            ${process.env.RESULTS_JSON}
+            \`\`\`json
+            ${currentResults}
+            \`\`\`
 
             **Previous Results:**
-            ${process.env.PREVIOUS_RESULTS_JSON}
+            \`\`\`json
+            ${previousResults}
+            \`\`\`
 
             Please investigate the cause of this performance change.
             `;

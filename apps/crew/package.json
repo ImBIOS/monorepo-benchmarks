@@ -10,7 +10,7 @@
   "dependencies": {
     "next": "12.0.3",
     "react": "17.0.2",
-    "react-dom": "17.0.2",
+    "react-dom": "19.1.0",
     "crew-important-feature-0": "workspace:*",
     "crew-important-feature-1": "workspace:*",
     "crew-important-feature-10": "workspace:*",

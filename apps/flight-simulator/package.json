@@ -28,7 +28,7 @@
     "flight-simulator-important-feature-7": "workspace:*",
     "flight-simulator-important-feature-8": "workspace:*",
     "flight-simulator-important-feature-9": "workspace:*",
-    "next": "15.3.4",
+    "next": "15.3.5",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },

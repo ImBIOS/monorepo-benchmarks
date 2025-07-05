@@ -1,10 +1,10 @@
 import * as cp from 'child_process';
-import * as path from 'path';
 import * as os from 'os';
+import * as path from 'path';
 import type {
   BenchmarkResults,
-  ToolResults,
   SpawnResult,
+  ToolResults,
 } from './scripts/types';
 
 const NUMBER_OF_RUNS = 10;
@@ -82,11 +82,13 @@ function runBenchmark(): BenchmarkResults {
       turbo: { average: 0, total: 0, runs: [], min: 0, max: 0 },
       lerna: { average: 0, total: 0, runs: [], min: 0, max: 0 },
       lage: { average: 0, total: 0, runs: [], min: 0, max: 0 },
+      moon: { average: 0, total: 0, runs: [], min: 0, max: 0 },
     },
     comparisons: {
       nxVsLage: 0,
       nxVsTurbo: 0,
       nxVsLerna: 0,
+      nxVsMoon: 0,
     },
   };
 
@@ -124,12 +126,23 @@ function runBenchmark(): BenchmarkResults {
     'lage'
   );
 
+  // Run moon benchmark
+  results.tools.moon = runToolBenchmark(
+    [
+      { cmd: 'moon', args: ['run', ':build', '--concurrency=3'] },
+      { cmd: 'moon', args: ['run', ':build', '--concurrency=3'] },
+    ],
+    { cmd: 'moon', args: ['run', ':build', '--concurrency=10'] },
+    'moon'
+  );
+
   // Calculate comparisons
-  const { nx, turbo, lerna, lage } = results.tools;
+  const { nx, turbo, lerna, lage, moon } = results.tools;
   results.comparisons = {
     nxVsLage: lage.average / nx.average,
     nxVsTurbo: turbo.average / nx.average,
     nxVsLerna: lerna.average / nx.average,
+    nxVsMoon: moon.average / nx.average,
   };
 
   return results;

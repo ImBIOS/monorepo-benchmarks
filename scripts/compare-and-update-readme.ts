@@ -36,7 +36,7 @@ function formatResults(results: BenchmarkResults): string {
   return `## Benchmark & Results (${date})
 
 Run \`pnpm run benchmark\`. The benchmark will warm the cache of all the tools. We benchmark how quickly
-Turbo/Nx/Lage/Lerna can figure out what needs to be restored from the cache and restores it.
+Turbo/Nx/Lage/Lerna/Moon can figure out what needs to be restored from the cache and restores it.
 
 These are the numbers using GitHub Actions runner:
 
@@ -45,12 +45,14 @@ These are the numbers using GitHub Actions runner:
 * average lerna (powered by nx) time is: ${results.tools.lerna.average.toFixed(
     1
   )}
+* average moon time is: ${results.tools.moon.average.toFixed(1)}
 * average nx time is: ${results.tools.nx.average.toFixed(1)}
 * nx is ${results.comparisons.nxVsLage.toFixed(1)}x faster than lage
 * nx is ${results.comparisons.nxVsTurbo.toFixed(1)}x faster than turbo
 * nx is ${results.comparisons.nxVsLerna.toFixed(
     1
-  )}x faster than lerna (powered by nx)`;
+  )}x faster than lerna (powered by nx)
+* nx is ${results.comparisons.nxVsMoon.toFixed(1)}x faster than moon`;
 }
 
 function updateReadme(newResults: BenchmarkResults): boolean {
@@ -140,7 +142,7 @@ function hasSignificantChanges(
   if (!current || !current.tools) return false; // No current data, no changes
 
   // Check if there's any significant change in any tool
-  const toolNames: ToolName[] = ['nx', 'turbo', 'lerna', 'lage'];
+  const toolNames: ToolName[] = ['nx', 'turbo', 'lerna', 'lage', 'moon'];
   return toolNames.some((tool) => {
     const previousValue = previous.tools[tool]?.average;
     if (previousValue === undefined) return true; // No previous data for this tool
@@ -218,6 +220,7 @@ function main(): ComparisonOutputs {
   console.log(`- Turbo: ${currentResults.tools.turbo.average.toFixed(1)}ms`);
   console.log(`- Lerna: ${currentResults.tools.lerna.average.toFixed(1)}ms`);
   console.log(`- Lage: ${currentResults.tools.lage.average.toFixed(1)}ms`);
+  console.log(`- Moon: ${currentResults.tools.moon.average.toFixed(1)}ms`);
 
   return {
     readmeUpdated: shouldUpdate,

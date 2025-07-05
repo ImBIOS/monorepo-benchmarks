@@ -15,11 +15,13 @@ export interface BenchmarkResults {
     turbo: ToolResults;
     lerna: ToolResults;
     lage: ToolResults;
+    moon: ToolResults;
   };
   comparisons: {
     nxVsLage: number;
     nxVsTurbo: number;
     nxVsLerna: number;
+    nxVsMoon: number;
   };
 }
 
@@ -28,7 +30,7 @@ export interface ComparisonOutputs {
   performanceRegression: boolean;
 }
 
-export type ToolName = 'nx' | 'turbo' | 'lerna' | 'lage';
+export type ToolName = 'nx' | 'turbo' | 'lerna' | 'lage' | 'moon';
 
 export interface SpawnResult {
   status: number | null;
@@ -43,6 +45,7 @@ export interface PackageVersions {
   turbo: string;
   lerna: string;
   lage: string;
+  moon: string;
   node: string;
   pnpm: string;
 }

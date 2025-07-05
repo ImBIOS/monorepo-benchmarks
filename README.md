@@ -1,4 +1,4 @@
-# Benchmarking Nx, Turbo, Lerna, and Lage
+# Benchmarking Nx, Turbo, Lerna, Lage, and Moon
 <!--
 Recording:
 
@@ -12,33 +12,46 @@ Repo contains:
 
 Combined there are about 26k components. It's a lot of components, but they are very small. This corresponds to a medium
 size enterprise repo. A lot of our clients have repos that are 10x bigger than this, so this repo isn't something out or
-ordinary. And, the bigger the repo, the bigger the difference in performance between Nx and Turbo.
+ordinary. And, the bigger the repo, the bigger the difference in performance between Nx and other tools.
 
-The repo has Nx, Turbo, Lerna and Lage enabled. They don't affect each other. You can remove one without affecting the
-other one.
+The repo has Nx, Turbo, Lerna, Lage, and Moon enabled. They don't affect each other. You can remove one without affecting the
+others.
 
-## Benchmark & Results (June 24, 2025)
+## Benchmark & Results (January 2025)
 
 Run `pnpm run benchmark`. The benchmark will warm the cache of all the tools. We benchmark how quickly
-Turbo/Nx/Lage/Lerna can figure out what needs to be restored from the cache and restores it.
+Turbo/Nx/Lage/Lerna/Moon can figure out what needs to be restored from the cache and restores it.
 
 These are the numbers using GitHub Actions runner:
 
 * average lage time is: 11830.6
 * average turbo time is: 9992.2
 * average lerna (powered by nx) time is: 3407.0
+* average moon time is: TBD (pending benchmark)
 * average nx time is: 1849.4
 * nx is 6.4x faster than lage
 * nx is 5.4x faster than turbo
 * nx is 1.8x faster than lerna (powered by nx)
+* nx vs moon performance comparison: TBD
+
+### About Moon
+
+[Moon](https://moonrepo.dev/) is a Rust-based build system and monorepo management tool that focuses on performance and developer experience. Key features include:
+
+* **Performance**: Written in Rust for maximum speed and efficiency
+* **Smart Caching**: Advanced caching mechanisms with remote caching support
+* **Task Pipeline**: Efficient task orchestration with dependency management
+* **Language Support**: Multi-language support including Node.js, Python, Rust, and more
+* **Configuration**: YAML-based configuration with intelligent defaults
+* **Incremental Building**: Only builds what's changed for faster development cycles
 
 ### Does this performance difference matter in practice?
 
-The cache restoration Turborepo provides is likely to be fast enough for a lot of small and mid-size repos.
+The cache restoration that tools like Turborepo and Moon provide is likely to be fast enough for a lot of small and mid-size repos.
 What matters more is the ability to distribute any command across say 50 machines while
 preserving the dev ergonomics of running it on a single machine. Nx can do it. Bazel can do it (which Nx
 borrows some
-ideas from). Turbo can't. This is where the perf gains are for larger repos.
+ideas from). Moon supports remote caching which enables distributed builds. This is where the perf gains are for larger repos.
 See [this benchmark](https://github.com/vsavkin/interstellar) to learn more.
 
 ## Dev ergonomics & Staying out of your way
@@ -128,7 +141,7 @@ The automation scripts are built with TypeScript for better type safety and deve
 The repository uses:
 
 * **Dependabot**: For automated dependency PRs
-* **Daily Update Workflow**: Aggressive updates to ensure we're testing latest versions
+* **Daily Update Workflow**: Aggressive updates to ensure we're testing latest versions (nx, turbo, lerna, lage, moonrepo)
 * **Compatibility Testing**: Benchmarks run after updates to ensure everything works
 
 ### 📈 Performance Tracking

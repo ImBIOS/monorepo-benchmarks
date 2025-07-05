@@ -16,6 +16,7 @@
     "create:release:ts": "tsx scripts/create-release.ts"
   },
   "devDependencies": {
+    "@moonrepo/cli": "^1.29.0",
     "@types/node": "^24.0.10",
     "lage": "2.14.6",
     "lerna": "8.2.3",

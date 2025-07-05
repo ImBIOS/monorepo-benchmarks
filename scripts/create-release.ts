@@ -33,14 +33,15 @@ function getPackageVersions(): PackageVersions {
     turbo: getInstalledVersion('turbo'),
     lerna: getInstalledVersion('lerna'),
     lage: getInstalledVersion('lage'),
+    moon: getInstalledVersion('@moonrepo/cli'),
     node: process.version.replace('v', ''),
     pnpm: packageJson.packageManager?.replace('pnpm@', '') || 'unknown',
   };
 }
 
 function generateTag(versions: PackageVersions): string {
-  const { nx, turbo, lerna, lage } = versions;
-  return `benchmark-nx${nx}-turbo${turbo}-lerna${lerna}-lage${lage}`;
+  const { nx, turbo, lerna, lage, moon } = versions;
+  return `benchmark-nx${nx}-turbo${turbo}-lerna${lerna}-lage${lage}-moon${moon}`;
 }
 
 function formatReleaseDescription(
@@ -69,6 +70,7 @@ The benchmark was skipped in this run. No performance data is available.
 | Turbo | ${versions.turbo} |
 | Lerna | ${versions.lerna} |
 | Lage | ${versions.lage} |
+| Moon | ${versions.moon} |
 | Node.js | ${versions.node} |
 | PNPM | ${versions.pnpm} |
 
@@ -85,12 +87,14 @@ The benchmark was skipped in this run. No performance data is available.
 - 🥇 **Nx**: ${results.tools.nx.average.toFixed(1)}ms
 - 🥈 **Lerna (nx-powered)**: ${results.tools.lerna.average.toFixed(1)}ms
 - 🥉 **Turbo**: ${results.tools.turbo.average.toFixed(1)}ms
+- 🌙 **Moon**: ${results.tools.moon.average.toFixed(1)}ms
 - 🐌 **Lage**: ${results.tools.lage.average.toFixed(1)}ms
 
 **Performance Comparison (vs Nx):**
 - Nx is **${results.comparisons.nxVsLage.toFixed(1)}x faster** than Lage
 - Nx is **${results.comparisons.nxVsTurbo.toFixed(1)}x faster** than Turbo
 - Nx is **${results.comparisons.nxVsLerna.toFixed(1)}x faster** than Lerna
+- Nx is **${results.comparisons.nxVsMoon.toFixed(1)}x faster** than Moon
 
 ## Tool Versions
 
@@ -100,6 +104,7 @@ The benchmark was skipped in this run. No performance data is available.
 | Turbo | ${versions.turbo} |
 | Lerna | ${versions.lerna} |
 | Lage | ${versions.lage} |
+| Moon | ${versions.moon} |
 | Node.js | ${versions.node} |
 | PNPM | ${versions.pnpm} |
 
@@ -135,7 +140,7 @@ function generateReleaseInfo(results: BenchmarkResults): ReleaseInfo {
   const releaseName =
     !results || !results.tools
       ? `📊 Benchmark Results - ${date} (No Data - Benchmark Skipped)`
-      : `🚀 Benchmark Results - ${date} (Nx ${versions.nx}, Turbo ${versions.turbo})`;
+      : `🚀 Benchmark Results - ${date} (Nx ${versions.nx}, Turbo ${versions.turbo}, Moon ${versions.moon})`;
 
   return {
     tagName,

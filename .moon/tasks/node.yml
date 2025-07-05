@@ -1,0 +1,35 @@
+$schema: 'https://moonrepo.dev/schemas/tasks.json'
+
+# Task definitions for Node.js projects
+tasks:
+  # Build task for Next.js applications
+  build:
+    command: 'next build'
+    inputs:
+      - 'src/**/*'
+      - 'pages/**/*'
+      - 'components/**/*'
+      - 'styles/**/*'
+      - 'public/**/*'
+      - 'next.config.js'
+      - 'package.json'
+      - 'tsconfig.json'
+    outputs:
+      - '.next/**/*'
+    options:
+      cache: true
+
+  # Development server
+  dev:
+    command: 'next dev'
+    local: true
+    options:
+      cache: false
+
+  # Start production server
+  start:
+    command: 'next start'
+    deps: ['build']
+    local: true
+    options:
+      cache: false

@@ -50,3 +50,6 @@ turbo-build.log
 
 # Release automation files
 release-description.md
+
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md

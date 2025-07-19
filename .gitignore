@@ -53,3 +53,13 @@ release-description.md
 
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
+
+# moon
+.moon/cache
+.moon/docker
+packages/*/moon
+packages/*/moon.exe
+/moon
+/moon.exe
+
+lerna-*.log

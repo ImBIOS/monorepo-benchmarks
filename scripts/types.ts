@@ -17,12 +17,7 @@ export interface BenchmarkResults {
     lage: ToolResults;
     moon: ToolResults;
   };
-  comparisons: {
-    nxVsLage: number;
-    nxVsTurbo: number;
-    nxVsLerna: number;
-    nxVsMoon: number;
-  };
+  comparisons: Record<string, number>;
 }
 
 export interface ComparisonOutputs {

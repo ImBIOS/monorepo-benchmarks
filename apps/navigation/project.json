@@ -1,0 +1,34 @@
+{
+  "name": "navigation",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/navigation",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/next:build",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "apps/navigation/.next"
+      }
+    },
+    "serve": {
+      "executor": "@nx/next:server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "navigation:build",
+        "dev": true
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "navigation:build:development",
+          "dev": true
+        },
+        "production": {
+          "buildTarget": "navigation:build:production",
+          "dev": false
+        }
+      }
+    }
+  }
+}

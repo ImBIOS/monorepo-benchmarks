@@ -1,0 +1,24 @@
+$schema: 'https://moonrepo.dev/schemas/toolchain.json'
+
+# Node.js configuration
+node:
+  version: '22.9.0'
+  packageManager: 'pnpm'
+
+  # Performance optimizations
+  dedupeOnLockfileChange: true
+  syncProjectWorkspaceDependencies: true
+
+  # Use workspace protocol for dependencies
+  dependencyVersionFormat: 'workspace'
+
+  # Add engines constraint to package.json
+  addEnginesConstraint: true
+
+  # Sync package manager field in package.json
+  syncPackageManagerField: true
+
+  # PNPM configuration
+  pnpm:
+    version: '10.10.0'
+    installArgs: ['--frozen-lockfile']

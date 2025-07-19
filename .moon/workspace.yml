@@ -1,0 +1,16 @@
+$schema: 'https://moonrepo.dev/schemas/workspace.json'
+
+# Disable auto-discovery to prevent conflicts
+projects:
+  globs:
+    - './apps/*'
+
+vcs:
+  provider: 'github'
+  defaultBranch: 'main'
+
+notifier:
+  terminalNotifications: 'always'
+experiments:
+  fasterGlobWalk: true
+  gitV2: true

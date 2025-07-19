@@ -2,5 +2,7 @@ packages:
   - apps/*
   - packages/*/*
 onlyBuiltDependencies:
+  - '@moonrepo/cli'
   - nx
+  - sharp
   - turbo

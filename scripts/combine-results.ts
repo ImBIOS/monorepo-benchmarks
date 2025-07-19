@@ -1,6 +1,22 @@
 import * as fs from 'node:fs';
 import type { BenchmarkResults, ToolName, ToolResults } from './types';
 
+// Global flag for output mode
+let isJsonOutput = false;
+
+// Helper functions for conditional logging
+function log(message: string) {
+  if (!isJsonOutput) {
+    console.log(message);
+  }
+}
+
+function logError(message: string) {
+  if (!isJsonOutput) {
+    console.error(message);
+  }
+}
+
 interface SingleToolResult {
   tool: ToolName;
   timestamp: string;
@@ -79,16 +95,17 @@ function combineResults(): BenchmarkResults {
         }
 
         foundResults++;
-        console.log(
+        log(
           `✓ Loaded results for ${tool}: avg=${formatTime(
             toolResult.results.average
           )}`
         );
       } else {
-        console.log(`⚠ No results file found for ${tool}: ${filePath}`);
+        log(`⚠ No results file found for ${tool}: ${filePath}`);
       }
     } catch (error) {
-      console.error(`❌ Error reading results for ${tool}:`, error);
+      logError(`❌ Error reading results for ${tool}:`);
+      console.error(error);
     }
   }
 
@@ -96,7 +113,7 @@ function combineResults(): BenchmarkResults {
     throw new Error('No benchmark results found to combine');
   }
 
-  console.log(`\n📊 Combined ${foundResults}/${tools.length} tool results`);
+  log(`\n📊 Combined ${foundResults}/${tools.length} tool results`);
 
   // Calculate comparisons against fastest tool
   const toolNames = Object.keys(results.tools) as ToolName[];
@@ -154,10 +171,10 @@ function combineResults(): BenchmarkResults {
       const indicator = ratio > 1 ? '🔴' : ratio === 1 ? '🥇' : '🟢';
 
       if (ratio === 1) {
-        console.log(`  ${indicator} ${name}: fastest`);
+        log(`  ${indicator} ${name}: fastest`);
       } else {
         const change = `${percentage}% slower`;
-        console.log(`  ${indicator} ${name}: ${ratio.toFixed(2)}x (${change})`);
+        log(`  ${indicator} ${name}: ${ratio.toFixed(2)}x (${change})`);
       }
     });
   }
@@ -167,18 +184,35 @@ function combineResults(): BenchmarkResults {
 
 // Main execution
 if (require.main === module) {
+  const args = process.argv.slice(2);
+
+  // Check for --output json flag
+  if (
+    args.includes('--output') &&
+    args[args.indexOf('--output') + 1] === 'json'
+  ) {
+    isJsonOutput = true;
+  }
+
   try {
-    console.log('🔄 Combining benchmark results...\n');
+    log('🔄 Combining benchmark results...\n');
 
     const combinedResults = combineResults();
 
-    console.log('\n' + '='.repeat(60));
-    console.log('  COMBINED JSON RESULTS');
-    console.log('='.repeat(60));
-    console.log('Raw combined benchmark data:');
-    console.log(JSON.stringify(combinedResults, null, 2));
+    if (isJsonOutput) {
+      // Output only JSON to stdout for clean redirection
+      console.log(JSON.stringify(combinedResults, null, 2));
+    } else {
+      // Output header and JSON for human-readable format
+      log('\n' + '='.repeat(60));
+      log('  COMBINED JSON RESULTS');
+      log('='.repeat(60));
+      log('Raw combined benchmark data:');
+      console.log(JSON.stringify(combinedResults, null, 2));
+    }
   } catch (error) {
-    console.error('\n❌ Failed to combine results:', error);
+    logError('\n❌ Failed to combine results:');
+    console.error(error);
     process.exit(1);
   }
 }

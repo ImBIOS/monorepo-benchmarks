@@ -1,10 +1,25 @@
 import * as cp from 'node:child_process';
 import * as os from 'node:os';
-import * as path from 'node:path';
 import type { SpawnResult, ToolName, ToolResults } from './types';
+
+// Global flag for output mode
+let isJsonOutput = false;
 
 const NUMBER_OF_RUNS = 10;
 const NUMBER_OF_PREP_RUNS = 2;
+
+// Helper functions for conditional logging
+function log(message: string) {
+  if (!isJsonOutput) {
+    console.log(message);
+  }
+}
+
+function logError(message: string) {
+  if (!isJsonOutput) {
+    console.error(message);
+  }
+}
 
 /**
  * Nx-specific environment variables for consistent benchmarking
@@ -48,30 +63,29 @@ function getOptimalConcurrency(): { prep: number; benchmark: number } {
     const benchmark = Math.max(1, cpuCount - 1);
     return { prep, benchmark };
   } else {
-    const prep = Math.max(1, Math.floor(cpuCount * 0.5) - 1);
-    const benchmark = Math.max(1, Math.floor(cpuCount * 0.5) - 1);
+    const prep = Math.max(1, Math.floor(cpuCount * 0.5));
+    const benchmark = Math.max(1, cpuCount - 1);
     return { prep, benchmark };
   }
 }
 
-function spawnSync(cmd: string, args: string[]): SpawnResult {
-  return cp.spawnSync(
-    path.join(
-      '.',
-      'node_modules',
-      '.bin',
-      os.platform() === 'win32' ? cmd + '.cmd' : cmd
-    ),
-    args,
-    {
-      stdio: 'pipe',
-      env: {
-        ...process.env,
-        ...NX_ENV_VARS,
-      },
-      encoding: 'utf8',
-    }
-  );
+function spawnSync(
+  cmd: string,
+  args: string[],
+  options?: cp.SpawnSyncOptions
+): SpawnResult {
+  const result = cp.spawnSync(cmd, args, {
+    stdio: 'pipe',
+    encoding: 'utf8',
+    ...options,
+  });
+
+  return {
+    status: result.status,
+    signal: result.signal,
+    stdout: result.stdout?.toString() || '',
+    stderr: result.stderr?.toString() || '',
+  };
 }
 
 function cleanFolders(): void {
@@ -82,10 +96,10 @@ function cleanNxCache(): void {
   try {
     const result = spawnSync('nx', ['reset']);
     if (result.status !== 0) {
-      console.warn('Failed to reset Nx cache, continuing...');
+      logError('Failed to reset Nx cache, continuing...');
     }
   } catch (error) {
-    console.warn('Failed to reset Nx cache, continuing...');
+    logError('Failed to reset Nx cache, continuing...');
   }
 }
 
@@ -96,20 +110,27 @@ function calculateStats(runs: number[]): Pick<ToolResults, 'min' | 'max'> {
   };
 }
 
-function runCommandWithFallback(
+function runCommandWithRetry(
   cmd: string,
   args: string[],
-  fallbackArgs: string[] = []
+  fallbackArgs: string[] = [],
+  maxTrials: number = 3
 ): SpawnResult {
   let result = spawnSync(cmd, args);
 
-  if (
-    result.status !== 0 &&
-    result.stderr?.includes('SqliteFailure') &&
-    fallbackArgs.length > 0
-  ) {
-    console.log('Retrying with fallback options...');
-    result = spawnSync(cmd, [...args, ...fallbackArgs]);
+  for (let trial = 1; trial <= maxTrials; trial++) {
+    if (result.status === 0) {
+      return result;
+    }
+
+    if (trial < maxTrials) {
+      continue;
+    }
+
+    if (trial === maxTrials) {
+      logError('Retrying with fallback options...');
+      result = spawnSync(cmd, [...args, ...fallbackArgs]);
+    }
   }
 
   return result;
@@ -119,56 +140,52 @@ function runLernaBenchmark(
   prepCommand: { cmd: string; args: string[] },
   runCommand: { cmd: string; args: string[] }
 ): ToolResults {
-  console.log('='.repeat(60));
-  console.log('  BENCHMARKING LERNA');
-  console.log('='.repeat(60));
+  log('='.repeat(60));
+  log('  BENCHMARKING LERNA');
+  log('='.repeat(60));
 
   // Prep phase
-  console.log('\n' + '-'.repeat(40));
-  console.log('  Preparation Phase');
-  console.log('-'.repeat(40));
-  console.log(`Running ${NUMBER_OF_PREP_RUNS} prep run(s)...`);
-  console.log(
-    `Prep command: ${prepCommand.cmd} ${prepCommand.args.join(' ')}\n`
-  );
+  log('\n' + '-'.repeat(40));
+  log('  Preparation Phase');
+  log('-'.repeat(40));
+  log(`Running ${NUMBER_OF_PREP_RUNS} prep run(s)...`);
+  log(`Prep command: ${prepCommand.cmd} ${prepCommand.args.join(' ')}\n`);
 
   for (let i = 0; i < NUMBER_OF_PREP_RUNS; i++) {
-    process.stdout.write(`  Prep ${i + 1}/${NUMBER_OF_PREP_RUNS}: `);
+    log(`  Prep ${i + 1}/${NUMBER_OF_PREP_RUNS}: `);
     const prepStart = Date.now();
-    const result = runCommandWithFallback(prepCommand.cmd, prepCommand.args, [
+    const result = runCommandWithRetry(prepCommand.cmd, prepCommand.args, [
       '--ignore-scripts',
       '--stream',
     ]);
     const prepDuration = Date.now() - prepStart;
 
     if (result.status === 0) {
-      console.log(`✓ ${formatTime(prepDuration)}`);
+      log(`✓ ${formatTime(prepDuration)}`);
     } else {
-      console.log(
-        `✗ ${formatTime(prepDuration)} (exit code: ${result.status})`
-      );
+      logError(`✗ ${formatTime(prepDuration)} (exit code: ${result.status})`);
       if (result.stderr) {
-        console.log(`    Error: ${result.stderr.slice(0, 200)}...`);
+        logError(`    Error: ${result.stderr.slice(0, 200)}...`);
       }
     }
   }
 
   // Benchmark phase
-  console.log('\n' + '-'.repeat(40));
-  console.log('  Benchmark Phase');
-  console.log('-'.repeat(40));
-  console.log(`Running ${NUMBER_OF_RUNS} benchmark runs...`);
-  console.log(`Command: ${runCommand.cmd} ${runCommand.args.join(' ')}\n`);
+  log('\n' + '-'.repeat(40));
+  log('  Benchmark Phase');
+  log('-'.repeat(40));
+  log(`Running ${NUMBER_OF_RUNS} benchmark runs...`);
+  log(`Command: ${runCommand.cmd} ${runCommand.args.join(' ')}\n`);
 
   let totalTime = 0;
   const runs: number[] = [];
 
   for (let i = 0; i < NUMBER_OF_RUNS; ++i) {
     cleanFolders();
-    process.stdout.write(`  Run ${i + 1}/${NUMBER_OF_RUNS}: `);
+    log(`  Run ${i + 1}/${NUMBER_OF_RUNS}: `);
 
     const start = Date.now();
-    const result = runCommandWithFallback(runCommand.cmd, runCommand.args, [
+    const result = runCommandWithRetry(runCommand.cmd, runCommand.args, [
       '--ignore-scripts',
       '--stream',
     ]);
@@ -178,11 +195,11 @@ function runLernaBenchmark(
     runs.push(duration);
 
     if (result.status === 0) {
-      console.log(`✓ ${formatTime(duration)}`);
+      log(`✓ ${formatTime(duration)}`);
     } else {
-      console.log(`✗ ${formatTime(duration)} (exit code: ${result.status})`);
+      logError(`✗ ${formatTime(duration)} (exit code: ${result.status})`);
       if (result.stderr) {
-        console.log(`    Error: ${result.stderr.slice(0, 100)}...`);
+        logError(`    Error: ${result.stderr.slice(0, 100)}...`);
       }
     }
   }
@@ -190,12 +207,12 @@ function runLernaBenchmark(
   const average = totalTime / NUMBER_OF_RUNS;
   const { min, max } = calculateStats(runs);
 
-  console.log(`\n📊 LERNA RESULTS:`);
-  console.log(`  Average: ${formatTime(average)}`);
-  console.log(`  Total: ${formatTime(totalTime)}`);
-  console.log(`  Min: ${formatTime(min)}`);
-  console.log(`  Max: ${formatTime(max)}`);
-  console.log(`  Range: ${formatTime(max - min)}`);
+  log(`\n📊 LERNA RESULTS:`);
+  log(`  Average: ${formatTime(average)}`);
+  log(`  Total: ${formatTime(totalTime)}`);
+  log(`  Min: ${formatTime(min)}`);
+  log(`  Max: ${formatTime(max)}`);
+  log(`  Range: ${formatTime(max - min)}`);
 
   return { average, total: totalTime, runs, min, max };
 }
@@ -205,50 +222,46 @@ function runToolBenchmark(
   runCommand: { cmd: string; args: string[] },
   toolName: string
 ): ToolResults {
-  console.log('='.repeat(60));
-  console.log(`  BENCHMARKING ${toolName.toUpperCase()}`);
-  console.log('='.repeat(60));
+  log('='.repeat(60));
+  log(`  BENCHMARKING ${toolName.toUpperCase()}`);
+  log('='.repeat(60));
 
   // Prep phase
-  console.log('\n' + '-'.repeat(40));
-  console.log('  Preparation Phase');
-  console.log('-'.repeat(40));
-  console.log(`Running ${NUMBER_OF_PREP_RUNS} prep run(s)...`);
-  console.log(
-    `Prep command: ${prepCommand.cmd} ${prepCommand.args.join(' ')}\n`
-  );
+  log('\n' + '-'.repeat(40));
+  log('  Preparation Phase');
+  log('-'.repeat(40));
+  log(`Running ${NUMBER_OF_PREP_RUNS} prep run(s)...`);
+  log(`Prep command: ${prepCommand.cmd} ${prepCommand.args.join(' ')}\n`);
 
   for (let i = 0; i < NUMBER_OF_PREP_RUNS; i++) {
-    process.stdout.write(`  Prep ${i + 1}/${NUMBER_OF_PREP_RUNS}: `);
+    log(`  Prep ${i + 1}/${NUMBER_OF_PREP_RUNS}: `);
     const prepStart = Date.now();
     const result = spawnSync(prepCommand.cmd, prepCommand.args);
     const prepDuration = Date.now() - prepStart;
 
     if (result.status === 0) {
-      console.log(`✓ ${formatTime(prepDuration)}`);
+      log(`✓ ${formatTime(prepDuration)}`);
     } else {
-      console.log(
-        `✗ ${formatTime(prepDuration)} (exit code: ${result.status})`
-      );
+      logError(`✗ ${formatTime(prepDuration)} (exit code: ${result.status})`);
       if (result.stderr) {
-        console.log(`    Error: ${result.stderr.slice(0, 200)}...`);
+        logError(`    Error: ${result.stderr.slice(0, 200)}...`);
       }
     }
   }
 
   // Benchmark phase
-  console.log('\n' + '-'.repeat(40));
-  console.log('  Benchmark Phase');
-  console.log('-'.repeat(40));
-  console.log(`Running ${NUMBER_OF_RUNS} benchmark runs...`);
-  console.log(`Command: ${runCommand.cmd} ${runCommand.args.join(' ')}\n`);
+  log('\n' + '-'.repeat(40));
+  log('  Benchmark Phase');
+  log('-'.repeat(40));
+  log(`Running ${NUMBER_OF_RUNS} benchmark runs...`);
+  log(`Command: ${runCommand.cmd} ${runCommand.args.join(' ')}\n`);
 
   let totalTime = 0;
   const runs: number[] = [];
 
   for (let i = 0; i < NUMBER_OF_RUNS; ++i) {
     cleanFolders();
-    process.stdout.write(`  Run ${i + 1}/${NUMBER_OF_RUNS}: `);
+    log(`  Run ${i + 1}/${NUMBER_OF_RUNS}: `);
 
     const start = Date.now();
     const result = spawnSync(runCommand.cmd, runCommand.args);
@@ -258,11 +271,11 @@ function runToolBenchmark(
     runs.push(duration);
 
     if (result.status === 0) {
-      console.log(`✓ ${formatTime(duration)}`);
+      log(`✓ ${formatTime(duration)}`);
     } else {
-      console.log(`✗ ${formatTime(duration)} (exit code: ${result.status})`);
+      logError(`✗ ${formatTime(duration)} (exit code: ${result.status})`);
       if (result.stderr) {
-        console.log(`    Error: ${result.stderr.slice(0, 100)}...`);
+        logError(`    Error: ${result.stderr.slice(0, 100)}...`);
       }
     }
   }
@@ -270,12 +283,12 @@ function runToolBenchmark(
   const average = totalTime / NUMBER_OF_RUNS;
   const { min, max } = calculateStats(runs);
 
-  console.log(`\n📊 ${toolName.toUpperCase()} RESULTS:`);
-  console.log(`  Average: ${formatTime(average)}`);
-  console.log(`  Total: ${formatTime(totalTime)}`);
-  console.log(`  Min: ${formatTime(min)}`);
-  console.log(`  Max: ${formatTime(max)}`);
-  console.log(`  Range: ${formatTime(max - min)}`);
+  log(`\n📊 ${toolName.toUpperCase()} RESULTS:`);
+  log(`  Average: ${formatTime(average)}`);
+  log(`  Total: ${formatTime(totalTime)}`);
+  log(`  Min: ${formatTime(min)}`);
+  log(`  Max: ${formatTime(max)}`);
+  log(`  Range: ${formatTime(max - min)}`);
 
   return { average, total: totalTime, runs, min, max };
 }
@@ -356,14 +369,14 @@ function runSingleToolBenchmark(tool: ToolName): ToolResults {
   const benchmarkStart = Date.now();
   const concurrency = getOptimalConcurrency();
 
-  console.log('='.repeat(60));
-  console.log(`  BENCHMARKING ${tool.toUpperCase()}`);
-  console.log('='.repeat(60));
-  console.log(`Started at: ${new Date().toLocaleString()}`);
-  console.log(`Number of runs: ${NUMBER_OF_RUNS}`);
-  console.log(`CPU cores detected: ${os.cpus().length}`);
-  console.log(`Environment: ${process.env.CI ? 'CI' : 'Local development'}`);
-  console.log(
+  log('='.repeat(60));
+  log(`  BENCHMARKING ${tool.toUpperCase()}`);
+  log('='.repeat(60));
+  log(`Started at: ${new Date().toLocaleString()}`);
+  log(`Number of runs: ${NUMBER_OF_RUNS}`);
+  log(`CPU cores detected: ${os.cpus().length}`);
+  log(`Environment: ${process.env.CI ? 'CI' : 'Local development'}`);
+  log(
     `Concurrency - Prep: ${concurrency.prep}, Benchmark: ${concurrency.benchmark}`
   );
 
@@ -371,7 +384,7 @@ function runSingleToolBenchmark(tool: ToolName): ToolResults {
   let results: ToolResults;
 
   if (tool === 'lerna') {
-    console.log('Cleaning Nx cache to prevent SQLite issues...');
+    log('Cleaning Nx cache to prevent SQLite issues...');
     cleanNxCache();
     results = runLernaBenchmark(commands.prep, commands.run);
   } else {
@@ -379,19 +392,28 @@ function runSingleToolBenchmark(tool: ToolName): ToolResults {
   }
 
   const totalBenchmarkTime = Date.now() - benchmarkStart;
-  console.log(`\nTotal benchmark time: ${formatTime(totalBenchmarkTime)}`);
-  console.log(`Completed at: ${new Date().toLocaleString()}`);
+  log(`\nTotal benchmark time: ${formatTime(totalBenchmarkTime)}`);
+  log(`Completed at: ${new Date().toLocaleString()}`);
 
   return results;
 }
 
 // Main execution
 if (require.main === module) {
-  const tool = process.argv[2] as ToolName;
+  const args = process.argv.slice(2);
+  const tool = args[0] as ToolName;
+
+  // Check for --output json flag
+  if (
+    args.includes('--output') &&
+    args[args.indexOf('--output') + 1] === 'json'
+  ) {
+    isJsonOutput = true;
+  }
 
   if (!tool || !['nx', 'turbo', 'lerna', 'lage', 'moon'].includes(tool)) {
-    console.error('Usage: node benchmark-single-tool.js <tool>');
-    console.error('Available tools: nx, turbo, lerna, lage, moon');
+    logError('Usage: node benchmark-single-tool.js <tool> [--output json]');
+    logError('Available tools: nx, turbo, lerna, lage, moon');
     process.exit(1);
   }
 
@@ -407,12 +429,19 @@ if (require.main === module) {
       results,
     };
 
-    console.log('\n' + '='.repeat(60));
-    console.log('  JSON RESULTS');
-    console.log('='.repeat(60));
-    console.log(JSON.stringify(output, null, 2));
+    if (isJsonOutput) {
+      // Output only JSON to stdout for clean redirection
+      console.log(JSON.stringify(output, null, 2));
+    } else {
+      // Output header and JSON for human-readable format
+      log('\n' + '='.repeat(60));
+      log('  JSON RESULTS');
+      log('='.repeat(60));
+      console.log(JSON.stringify(output, null, 2));
+    }
   } catch (error) {
-    console.error(`\n❌ Benchmark failed for ${tool}:`, error);
+    logError(`\n❌ Benchmark failed for ${tool}:`);
+    console.error(error);
     process.exit(1);
   }
 }

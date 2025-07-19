@@ -105,7 +105,7 @@ jobs:
       - name: Run benchmark for ${{ matrix.tool }}
         id: benchmark
         run: |
-          node dist/scripts/benchmark-single-tool.js ${{ matrix.tool }} > benchmark-results-${{ matrix.tool }}.json
+          node dist/scripts/benchmark-single-tool.js ${{ matrix.tool }} --output json > benchmark-results-${{ matrix.tool }}.json
 
       - name: Upload benchmark results for ${{ matrix.tool }}
         uses: actions/upload-artifact@v4
@@ -153,7 +153,7 @@ jobs:
       - name: Combine benchmark results
         if: ${{ !inputs.skip_benchmark }}
         run: |
-          node dist/scripts/combine-results.js > benchmark-results.json
+          node dist/scripts/combine-results.js --output json > benchmark-results.json
 
       - name: Read current results
         if: ${{ !inputs.skip_benchmark }}
@@ -256,7 +256,7 @@ jobs:
       - name: Combine benchmark results for commit
         if: ${{ !inputs.skip_benchmark }}
         run: |
-          node dist/scripts/combine-results.js > benchmark-results.json
+          node dist/scripts/combine-results.js --output json > benchmark-results.json
 
       - name: Commit and push changes
         if: needs.analysis.outputs.readme-updated == 'true'

@@ -44,8 +44,8 @@ jobs:
 
       - name: Test compiled JavaScript files exist
         run: |
-          test -f dist/benchmark-json.js
-          echo "✅ dist/benchmark-json.js exists"
+          test -f dist/scripts/benchmark-json.js
+          echo "✅ dist/scripts/benchmark-json.js exists"
           test -f dist/scripts/compare-and-update-readme.js
           echo "✅ dist/scripts/compare-and-update-readme.js exists"
 

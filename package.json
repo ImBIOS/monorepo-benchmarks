@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "benchmark": "tsx benchmark-json.ts",
-    "benchmark:json": "pnpm run build:scripts && node dist/benchmark-json.js",
-    "benchmark:json:ts": "tsx benchmark-json.ts",
+    "benchmark": "tsx scripts/benchmark-json.ts",
+    "benchmark:json": "pnpm run build:scripts && node dist/scripts/benchmark-json.js",
+    "benchmark:json:ts": "tsx scripts/benchmark-json.ts",
     "build:scripts": "tsc -p tsconfig.scripts.json",
     "build:scripts:watch": "tsc -p tsconfig.scripts.json --watch",
     "test:automation": "pnpm run build:scripts && node dist/scripts/test-compare.js",

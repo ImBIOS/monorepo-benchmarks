@@ -118,7 +118,7 @@ The automation scripts are built with TypeScript for better type safety and deve
 
 **File Structure:**
 
-* **`benchmark-json.ts`** - TypeScript version with strict types
+* **`scripts/benchmark-json.ts`** - TypeScript version with strict types
 * **`scripts/compare-and-update-readme.ts`** - Compares results and updates README
 * **`scripts/create-release.ts`** - Generates GitHub releases with version-based tags
 * **`scripts/test-compare.ts`** - Test suite for automation functions

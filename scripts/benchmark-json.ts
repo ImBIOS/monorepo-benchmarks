@@ -1,11 +1,7 @@
 import * as cp from 'node:child_process';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import type {
-  BenchmarkResults,
-  SpawnResult,
-  ToolResults,
-} from './scripts/types';
+import type { BenchmarkResults, SpawnResult, ToolResults } from './types';
 
 const NUMBER_OF_RUNS = 10;
 const NUMBER_OF_PREP_RUNS = 2;

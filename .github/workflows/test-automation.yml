@@ -5,15 +5,11 @@ on:
     branches: [main]
     paths:
       - 'scripts/**'
-      - 'benchmark-json.ts'
-      - 'benchmark-json.js'
       - '.github/workflows/**'
   pull_request:
     branches: [main]
     paths:
       - 'scripts/**'
-      - 'benchmark-json.ts'
-      - 'benchmark-json.js'
       - '.github/workflows/**'
   workflow_dispatch:
 
@@ -41,8 +37,8 @@ jobs:
 
       - name: Test TypeScript source files exist
         run: |
-          test -f benchmark-json.ts
-          echo "✅ benchmark-json.ts exists"
+          test -f scripts/benchmark-json.ts
+          echo "✅ scripts/benchmark-json.ts exists"
           test -f scripts/compare-and-update-readme.ts
           echo "✅ compare-and-update-readme.ts exists"
 

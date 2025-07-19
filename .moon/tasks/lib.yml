@@ -1,0 +1,16 @@
+$schema: 'https://moonrepo.dev/schemas/tasks.json'
+
+# Task definitions for TypeScript libraries
+tasks:
+  # Build task for TypeScript libraries (type checking)
+  build:
+    command: 'tsc'
+    args: ['--noEmit', '--skipLibCheck']
+    inputs:
+      - 'src/**/*'
+      - 'index.ts'
+      - 'package.json'
+      - 'tsconfig.json'
+      - 'tsconfig.lib.json'
+    options:
+      cache: true

@@ -1,0 +1,34 @@
+{
+  "name": "crew",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/crew",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/next:build",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "apps/crew/.next"
+      }
+    },
+    "serve": {
+      "executor": "@nx/next:server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "crew:build",
+        "dev": true
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "crew:build:development",
+          "dev": true
+        },
+        "production": {
+          "buildTarget": "crew:build:production",
+          "dev": false
+        }
+      }
+    }
+  }
+}

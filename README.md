@@ -1,8 +1,4 @@
 # Benchmarking Nx, Turbo, Lerna, Lage, and Moon
-<!--
-Recording:
-
-![nx-turbo-recording](./readme-assets/turbo-nx-perf.gif) -->
 
 Repo contains:
 
@@ -60,8 +56,6 @@ When some folks compare Nx and Turborepo, they say something like "Nx may do all
 faster, but Turbo is built to stay out of you way". Let's talk about staying out of your way:
 
 Run `nx build crew --skip-nx-cache` and `turbo run build --scope=crew --force`:
-
-![terminal outputs](./readme-assets/turbo-nx-terminal.gif)
 
 Nx doesn't change your terminal output. Spinners, animations, colors are the same whether you use Nx or not (we
 instrument Node.js to get this result). What is also important is that when you restore things from cache, Nx will

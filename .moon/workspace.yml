@@ -1,140 +1,16 @@
 $schema: 'https://moonrepo.dev/schemas/workspace.json'
 
 projects:
-  # Next.js applications
-  crew: 'apps/crew'
-  flight-simulator: 'apps/flight-simulator'
-  navigation: 'apps/navigation'
-  ticket-booking: 'apps/ticket-booking'
-  warp-drive-manager: 'apps/warp-drive-manager'
+  globs:
+    - './apps/*'
+    - './packages/*/*'
 
-  # Crew packages
-  crew-important-feature-0: 'packages/crew/important-feature-0'
-  crew-important-feature-1: 'packages/crew/important-feature-1'
-  crew-important-feature-2: 'packages/crew/important-feature-2'
-  crew-important-feature-3: 'packages/crew/important-feature-3'
-  crew-important-feature-4: 'packages/crew/important-feature-4'
-  crew-important-feature-5: 'packages/crew/important-feature-5'
-  crew-important-feature-6: 'packages/crew/important-feature-6'
-  crew-important-feature-7: 'packages/crew/important-feature-7'
-  crew-important-feature-8: 'packages/crew/important-feature-8'
-  crew-important-feature-9: 'packages/crew/important-feature-9'
-  crew-important-feature-10: 'packages/crew/important-feature-10'
-  crew-important-feature-11: 'packages/crew/important-feature-11'
-  crew-important-feature-12: 'packages/crew/important-feature-12'
-  crew-important-feature-13: 'packages/crew/important-feature-13'
-  crew-important-feature-14: 'packages/crew/important-feature-14'
-  crew-important-feature-15: 'packages/crew/important-feature-15'
-  crew-important-feature-16: 'packages/crew/important-feature-16'
-  crew-important-feature-17: 'packages/crew/important-feature-17'
-  crew-important-feature-18: 'packages/crew/important-feature-18'
-  crew-important-feature-19: 'packages/crew/important-feature-19'
-
-  # Flight simulator packages
-  flight-simulator-important-feature-0: 'packages/flight-simulator/important-feature-0'
-  flight-simulator-important-feature-1: 'packages/flight-simulator/important-feature-1'
-  flight-simulator-important-feature-2: 'packages/flight-simulator/important-feature-2'
-  flight-simulator-important-feature-3: 'packages/flight-simulator/important-feature-3'
-  flight-simulator-important-feature-4: 'packages/flight-simulator/important-feature-4'
-  flight-simulator-important-feature-5: 'packages/flight-simulator/important-feature-5'
-  flight-simulator-important-feature-6: 'packages/flight-simulator/important-feature-6'
-  flight-simulator-important-feature-7: 'packages/flight-simulator/important-feature-7'
-  flight-simulator-important-feature-8: 'packages/flight-simulator/important-feature-8'
-  flight-simulator-important-feature-9: 'packages/flight-simulator/important-feature-9'
-  flight-simulator-important-feature-10: 'packages/flight-simulator/important-feature-10'
-  flight-simulator-important-feature-11: 'packages/flight-simulator/important-feature-11'
-  flight-simulator-important-feature-12: 'packages/flight-simulator/important-feature-12'
-  flight-simulator-important-feature-13: 'packages/flight-simulator/important-feature-13'
-  flight-simulator-important-feature-14: 'packages/flight-simulator/important-feature-14'
-  flight-simulator-important-feature-15: 'packages/flight-simulator/important-feature-15'
-  flight-simulator-important-feature-16: 'packages/flight-simulator/important-feature-16'
-  flight-simulator-important-feature-17: 'packages/flight-simulator/important-feature-17'
-  flight-simulator-important-feature-18: 'packages/flight-simulator/important-feature-18'
-  flight-simulator-important-feature-19: 'packages/flight-simulator/important-feature-19'
-
-  # Navigation packages
-  navigation-important-feature-0: 'packages/navigation/important-feature-0'
-  navigation-important-feature-1: 'packages/navigation/important-feature-1'
-  navigation-important-feature-2: 'packages/navigation/important-feature-2'
-  navigation-important-feature-3: 'packages/navigation/important-feature-3'
-  navigation-important-feature-4: 'packages/navigation/important-feature-4'
-  navigation-important-feature-5: 'packages/navigation/important-feature-5'
-  navigation-important-feature-6: 'packages/navigation/important-feature-6'
-  navigation-important-feature-7: 'packages/navigation/important-feature-7'
-  navigation-important-feature-8: 'packages/navigation/important-feature-8'
-  navigation-important-feature-9: 'packages/navigation/important-feature-9'
-  navigation-important-feature-10: 'packages/navigation/important-feature-10'
-  navigation-important-feature-11: 'packages/navigation/important-feature-11'
-  navigation-important-feature-12: 'packages/navigation/important-feature-12'
-  navigation-important-feature-13: 'packages/navigation/important-feature-13'
-  navigation-important-feature-14: 'packages/navigation/important-feature-14'
-  navigation-important-feature-15: 'packages/navigation/important-feature-15'
-  navigation-important-feature-16: 'packages/navigation/important-feature-16'
-  navigation-important-feature-17: 'packages/navigation/important-feature-17'
-  navigation-important-feature-18: 'packages/navigation/important-feature-18'
-  navigation-important-feature-19: 'packages/navigation/important-feature-19'
-
-  # Ticket booking packages
-  ticket-booking-important-feature-0: 'packages/ticket-booking/important-feature-0'
-  ticket-booking-important-feature-1: 'packages/ticket-booking/important-feature-1'
-  ticket-booking-important-feature-2: 'packages/ticket-booking/important-feature-2'
-  ticket-booking-important-feature-3: 'packages/ticket-booking/important-feature-3'
-  ticket-booking-important-feature-4: 'packages/ticket-booking/important-feature-4'
-  ticket-booking-important-feature-5: 'packages/ticket-booking/important-feature-5'
-  ticket-booking-important-feature-6: 'packages/ticket-booking/important-feature-6'
-  ticket-booking-important-feature-7: 'packages/ticket-booking/important-feature-7'
-  ticket-booking-important-feature-8: 'packages/ticket-booking/important-feature-8'
-  ticket-booking-important-feature-9: 'packages/ticket-booking/important-feature-9'
-  ticket-booking-important-feature-10: 'packages/ticket-booking/important-feature-10'
-  ticket-booking-important-feature-11: 'packages/ticket-booking/important-feature-11'
-  ticket-booking-important-feature-12: 'packages/ticket-booking/important-feature-12'
-  ticket-booking-important-feature-13: 'packages/ticket-booking/important-feature-13'
-  ticket-booking-important-feature-14: 'packages/ticket-booking/important-feature-14'
-  ticket-booking-important-feature-15: 'packages/ticket-booking/important-feature-15'
-  ticket-booking-important-feature-16: 'packages/ticket-booking/important-feature-16'
-  ticket-booking-important-feature-17: 'packages/ticket-booking/important-feature-17'
-  ticket-booking-important-feature-18: 'packages/ticket-booking/important-feature-18'
-  ticket-booking-important-feature-19: 'packages/ticket-booking/important-feature-19'
-
-  # Warp drive manager packages
-  warp-drive-manager-important-feature-0: 'packages/warp-drive-manager/important-feature-0'
-  warp-drive-manager-important-feature-1: 'packages/warp-drive-manager/important-feature-1'
-  warp-drive-manager-important-feature-2: 'packages/warp-drive-manager/important-feature-2'
-  warp-drive-manager-important-feature-3: 'packages/warp-drive-manager/important-feature-3'
-  warp-drive-manager-important-feature-4: 'packages/warp-drive-manager/important-feature-4'
-  warp-drive-manager-important-feature-5: 'packages/warp-drive-manager/important-feature-5'
-  warp-drive-manager-important-feature-6: 'packages/warp-drive-manager/important-feature-6'
-  warp-drive-manager-important-feature-7: 'packages/warp-drive-manager/important-feature-7'
-  warp-drive-manager-important-feature-8: 'packages/warp-drive-manager/important-feature-8'
-  warp-drive-manager-important-feature-9: 'packages/warp-drive-manager/important-feature-9'
-  warp-drive-manager-important-feature-10: 'packages/warp-drive-manager/important-feature-10'
-  warp-drive-manager-important-feature-11: 'packages/warp-drive-manager/important-feature-11'
-  warp-drive-manager-important-feature-12: 'packages/warp-drive-manager/important-feature-12'
-  warp-drive-manager-important-feature-13: 'packages/warp-drive-manager/important-feature-13'
-  warp-drive-manager-important-feature-14: 'packages/warp-drive-manager/important-feature-14'
-  warp-drive-manager-important-feature-15: 'packages/warp-drive-manager/important-feature-15'
-  warp-drive-manager-important-feature-16: 'packages/warp-drive-manager/important-feature-16'
-  warp-drive-manager-important-feature-17: 'packages/warp-drive-manager/important-feature-17'
-  warp-drive-manager-important-feature-18: 'packages/warp-drive-manager/important-feature-18'
-  warp-drive-manager-important-feature-19: 'packages/warp-drive-manager/important-feature-19'
-
-  # Shared packages
-  shared-alerts: 'packages/shared/alerts'
-  shared-buttons: 'packages/shared/buttons'
-  shared-components: 'packages/shared/components'
-  shared-dialogs: 'packages/shared/dialogs'
-  shared-icons: 'packages/shared/icons'
-
-# Performance optimizations
-pipeline:
-  cacheLifetime: '7 days'
-  autoCleanCache: true
-  inheritColorsForPipedTasks: true
-
-# Configure Node.js toolchain
 vcs:
-  manager: 'git'
+  provider: 'github'
   defaultBranch: 'main'
 
-# Enable telemetry for usage insights
-telemetry: true
+notifier:
+  terminalNotifications: 'always'
+experiments:
+  fasterGlobWalk: true
+  gitV2: true

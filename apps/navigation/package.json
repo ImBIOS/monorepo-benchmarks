@@ -28,13 +28,12 @@
     "navigation-important-feature-7": "workspace:*",
     "navigation-important-feature-8": "workspace:*",
     "navigation-important-feature-9": "workspace:*",
-    "next": "15.3.5",
+    "next": "15.4.2",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },
   "devDependencies": {
     "@types/react": "19.1.8",
-    "next-transpile-modules": "10.0.1",
     "typescript": "5.8.3"
   },
   "nx": {

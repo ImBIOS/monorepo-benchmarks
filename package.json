@@ -16,10 +16,10 @@
     "create:release:ts": "tsx scripts/create-release.ts"
   },
   "devDependencies": {
-    "@types/node": "^24.0.14",
+    "@types/node": "^24.0.15",
     "lage": "2.14.6",
     "lerna": "8.2.3",
-    "nx": "21.2.4",
+    "nx": "21.3.0",
     "tsx": "^4.20.3",
     "turbo": "2.5.5",
     "typescript": "^5.8.3"

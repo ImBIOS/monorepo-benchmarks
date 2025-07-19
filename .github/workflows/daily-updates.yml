@@ -108,29 +108,43 @@ jobs:
         with:
           name: updated-files
 
-      - name: Commit and push changes
+      - name: Create branch and commit changes
+        id: commit
         run: |
+          # Configure git
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+
+          # Create and switch to new branch
+          BRANCH_NAME="dependencies/update-$(date '+%Y-%m-%d')"
+          git checkout -b "$BRANCH_NAME"
+
+          # Stage all changes
           git add -A
-          git commit -m "⬆️ Update dependencies to latest versions - $(date '+%Y-%m-%d')" || exit 0
-          git pull --rebase origin main
-          git push
+
+          # Check if there are actually changes to commit
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            echo "has-commits=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Commit changes
+          git commit -m "⬆️ Update dependencies to latest versions - $(date '+%Y-%m-%d')"
+
+          # Push branch
+          git push origin "$BRANCH_NAME"
+
+          echo "branch-name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "has-commits=true" >> $GITHUB_OUTPUT
 
       - name: Create PR for dependency updates
+        if: steps.commit.outputs.has-commits == 'true'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.PAT_TOKEN }}
           script: |
-            const branchName = `dependencies/update-${new Date().toISOString().split('T')[0]}`;
-
-            // Create branch
-            await github.rest.git.createRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: `refs/heads/${branchName}`,
-              sha: context.sha
-            });
+            const branchName = '${{ steps.commit.outputs.branch-name }}';
 
             // Create PR
             await github.rest.pulls.create({

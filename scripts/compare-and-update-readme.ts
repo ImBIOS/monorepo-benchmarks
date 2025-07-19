@@ -1,5 +1,5 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import type { BenchmarkResults, ComparisonOutputs, ToolName } from './types';
 
 // Threshold for significant performance change (10%)
@@ -54,6 +54,18 @@ function formatResults(results: BenchmarkResults): string {
     })
     .join('\n');
 
+  // Generate tool results list dynamically based on available tools
+  const toolOrder = ['lage', 'turbo', 'lerna', 'moon', 'nx'];
+  const toolResults = toolOrder
+    .filter((tool) => results.tools[tool as ToolName])
+    .map((tool) => {
+      const toolLabel = tool === 'lerna' ? 'lerna (powered by nx)' : tool;
+      return `* average ${toolLabel} time is: ${results.tools[
+        tool as ToolName
+      ].average.toFixed(1)}`;
+    })
+    .join('\n');
+
   return `## Benchmark & Results (${date})
 
 Run \`pnpm run benchmark\`. The benchmark will warm the cache of all the tools. We benchmark how quickly
@@ -61,13 +73,7 @@ Turbo/Nx/Lerna/Lage/Moon can figure out what needs to be restored from the cache
 
 These are the numbers using GitHub Actions runner:
 
-* average lage time is: ${results.tools.lage.average.toFixed(1)}
-* average turbo time is: ${results.tools.turbo.average.toFixed(1)}
-* average lerna (powered by nx) time is: ${results.tools.lerna.average.toFixed(
-    1
-  )}
-* average moon time is: ${results.tools.moon.average.toFixed(1)}
-* average nx time is: ${results.tools.nx.average.toFixed(1)}
+${toolResults}
 ${comparisons}`;
 }
 
@@ -232,11 +238,15 @@ function main(): ComparisonOutputs {
 
   // Log current results for debugging
   console.log('Current benchmark results:');
-  console.log(`- NX: ${currentResults.tools.nx.average.toFixed(1)}ms`);
-  console.log(`- Turbo: ${currentResults.tools.turbo.average.toFixed(1)}ms`);
-  console.log(`- Lerna: ${currentResults.tools.lerna.average.toFixed(1)}ms`);
-  console.log(`- Lage: ${currentResults.tools.lage.average.toFixed(1)}ms`);
-  console.log(`- Moon: ${currentResults.tools.moon.average.toFixed(1)}ms`);
+  const availableTools: ToolName[] = ['nx', 'turbo', 'lerna', 'lage', 'moon'];
+  availableTools.forEach((tool) => {
+    if (currentResults.tools[tool]) {
+      const toolLabel = tool.toUpperCase();
+      console.log(
+        `- ${toolLabel}: ${currentResults.tools[tool].average.toFixed(1)}ms`
+      );
+    }
+  });
 
   return {
     readmeUpdated: shouldUpdate,

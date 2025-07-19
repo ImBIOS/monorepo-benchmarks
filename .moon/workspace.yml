@@ -3,7 +3,6 @@ $schema: 'https://moonrepo.dev/schemas/workspace.json'
 projects:
   globs:
     - './apps/*'
-    - './packages/*/*'
 
 vcs:
   provider: 'github'

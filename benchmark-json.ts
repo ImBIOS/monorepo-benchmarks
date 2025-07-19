@@ -333,16 +333,7 @@ function runBenchmark(): BenchmarkResults {
       lage: { average: 0, total: 0, runs: [], min: 0, max: 0 },
       moon: { average: 0, total: 0, runs: [], min: 0, max: 0 },
     },
-<<<<<<< HEAD
-    comparisons: {
-      nxVsLage: 0,
-      nxVsTurbo: 0,
-      nxVsLerna: 0,
-      nxVsMoon: 0,
-    },
-=======
     comparisons: {},
->>>>>>> 72e4fd0fcad0fb81b6a5d2739fb095fe2375d8fd
   };
 
   // Run turbo benchmark
@@ -412,25 +403,6 @@ function runBenchmark(): BenchmarkResults {
   );
 
   // Run moon benchmark
-<<<<<<< HEAD
-  results.tools.moon = runToolBenchmark(
-    [
-      { cmd: 'moon', args: ['run', ':build', '--concurrency=3'] },
-      { cmd: 'moon', args: ['run', ':build', '--concurrency=3'] },
-    ],
-    { cmd: 'moon', args: ['run', ':build', '--concurrency=10'] },
-    'moon'
-  );
-
-  // Calculate comparisons
-  const { nx, turbo, lerna, lage, moon } = results.tools;
-  results.comparisons = {
-    nxVsLage: lage.average / nx.average,
-    nxVsTurbo: turbo.average / nx.average,
-    nxVsLerna: lerna.average / nx.average,
-    nxVsMoon: moon.average / nx.average,
-  };
-=======
   console.log(`\n[5/5] Starting Moon benchmark...`);
   results.tools.moon = runToolBenchmark(
     {
@@ -504,7 +476,6 @@ function runBenchmark(): BenchmarkResults {
       console.log(`  ${indicator} ${tool}: ${ratio.toFixed(2)}x (${change})`);
     }
   });
->>>>>>> 72e4fd0fcad0fb81b6a5d2739fb095fe2375d8fd
 
   return results;
 }

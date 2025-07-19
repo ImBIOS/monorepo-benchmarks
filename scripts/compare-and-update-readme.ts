@@ -33,6 +33,27 @@ function formatResults(results: BenchmarkResults): string {
     day: 'numeric',
   });
 
+  // Find the fastest tool
+  const toolEntries = Object.entries(results.tools).map(([name, data]) => ({
+    name,
+    average: data.average,
+  }));
+
+  const fastestTool = toolEntries.reduce((fastest, current) =>
+    current.average < fastest.average ? current : fastest
+  );
+
+  // Generate dynamic comparisons
+  const comparisons = toolEntries
+    .filter((tool) => tool.name !== fastestTool.name)
+    .map((tool) => {
+      const ratio = (tool.average / fastestTool.average).toFixed(1);
+      const toolLabel =
+        tool.name === 'lerna' ? 'lerna (powered by nx)' : tool.name;
+      return `* ${fastestTool.name} is ${ratio}x faster than ${toolLabel}`;
+    })
+    .join('\n');
+
   return `## Benchmark & Results (${date})
 
 Run \`pnpm run benchmark\`. The benchmark will warm the cache of all the tools. We benchmark how quickly
@@ -47,12 +68,7 @@ These are the numbers using GitHub Actions runner:
   )}
 * average moon time is: ${results.tools.moon.average.toFixed(1)}
 * average nx time is: ${results.tools.nx.average.toFixed(1)}
-* nx is ${results.comparisons.nxVsLage.toFixed(1)}x faster than lage
-* nx is ${results.comparisons.nxVsTurbo.toFixed(1)}x faster than turbo
-* nx is ${results.comparisons.nxVsLerna.toFixed(
-    1
-  )}x faster than lerna (powered by nx)
-* nx is ${results.comparisons.nxVsMoon.toFixed(1)}x faster than moon`;
+${comparisons}`;
 }
 
 function updateReadme(newResults: BenchmarkResults): boolean {

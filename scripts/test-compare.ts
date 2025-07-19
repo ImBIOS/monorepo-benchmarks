@@ -1,8 +1,8 @@
 import {
-  parseResults,
-  isSignificantChange,
-  formatResults,
   detectPerformanceRegression,
+  formatResults,
+  isSignificantChange,
+  parseResults,
   shouldUpdateReadme,
 } from './compare-and-update-readme';
 import type { BenchmarkResults } from './types';
@@ -41,6 +41,13 @@ const currentResults: BenchmarkResults = {
       min: 9500,
       max: 9900,
     },
+    moon: {
+      average: 5500.0,
+      total: 55000,
+      runs: [5400, 5600, 5500, 5450, 5550, 5520, 5480, 5510, 5530, 5470],
+      min: 5400,
+      max: 5600,
+    },
   },
   comparisons: {
     nxVsLage: 27.15,
@@ -58,6 +65,7 @@ const previousResults: BenchmarkResults = {
     turbo: { average: 4500.0, total: 45000, runs: [], min: 4400, max: 4600 },
     lerna: { average: 1750.0, total: 17500, runs: [], min: 1700, max: 1800 },
     lage: { average: 9500.0, total: 95000, runs: [], min: 9400, max: 9600 },
+    moon: { average: 5400.0, total: 54000, runs: [], min: 5300, max: 5500 },
   },
   comparisons: {
     nxVsLage: 27.14,

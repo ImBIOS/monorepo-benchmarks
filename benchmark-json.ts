@@ -10,6 +10,21 @@ import type {
 const NUMBER_OF_RUNS = 10;
 const NUMBER_OF_PREP_RUNS = 2;
 
+/**
+ * Nx-specific environment variables for consistent benchmarking
+ * These variables ensure Nx runs in a predictable state across all benchmark runs
+ */
+const NX_ENV_VARS = {
+  // Disable dynamic output to prevent output interference during benchmarking
+  NX_TASKS_RUNNER_DYNAMIC_OUTPUT: 'false',
+  // Disable Nx daemon to ensure consistent cold-start performance measurement
+  NX_DAEMON: 'false',
+  // Use temporary cache path to avoid interference with local development cache
+  NX_DB_PATH: '/tmp/nx-cache',
+  // Skip database operations for faster benchmarking
+  NX_SKIP_DB: 'true',
+} as const;
+
 function formatTime(ms: number): string {
   const seconds = Math.floor(ms / 1000);
   const minutes = Math.floor(seconds / 60);
@@ -75,10 +90,7 @@ function spawnSync(cmd: string, args: string[]): SpawnResult {
       stdio: 'pipe',
       env: {
         ...process.env,
-        NX_TASKS_RUNNER_DYNAMIC_OUTPUT: 'false',
-        NX_DAEMON: 'false',
-        NX_DB_PATH: '/tmp/nx-cache',
-        NX_SKIP_DB: 'true',
+        ...NX_ENV_VARS,
       },
       encoding: 'utf8',
     }
@@ -107,26 +119,32 @@ function calculateStats(runs: number[]): Pick<ToolResults, 'min' | 'max'> {
   };
 }
 
+function runCommandWithFallback(
+  cmd: string,
+  args: string[],
+  fallbackArgs: string[] = []
+): SpawnResult {
+  // First attempt: try with original command
+  let result = spawnSync(cmd, args);
+
+  // If SQLite failure detected, retry with fallback args
+  if (
+    result.status !== 0 &&
+    result.stderr?.includes('SqliteFailure') &&
+    fallbackArgs.length > 0
+  ) {
+    console.log('Retrying with fallback options...');
+    result = spawnSync(cmd, [...args, ...fallbackArgs]);
+  }
+
+  return result;
+}
+
 function runLernaBenchmark(
   prepCommand: { cmd: string; args: string[] },
   runCommand: { cmd: string; args: string[] }
 ): ToolResults {
   logSection('BENCHMARKING LERNA');
-
-  // Try with Nx first, fallback to pure lerna if SQLite fails
-  const attemptCommand = (
-    cmd: string,
-    args: string[],
-    attempt: number
-  ): SpawnResult => {
-    if (attempt === 1) {
-      // First attempt: try with Nx integration
-      return spawnSync(cmd, args);
-    } else {
-      // Second attempt: disable Nx integration
-      return spawnSync(cmd, [...args, '--ignore-scripts', '--stream']);
-    }
-  };
 
   // Prep phase
   logSubsection('Preparation Phase');
@@ -139,11 +157,10 @@ function runLernaBenchmark(
     process.stdout.write(`  Prep ${i + 1}/${NUMBER_OF_PREP_RUNS}: `);
     const prepStart = Date.now();
 
-    let result = attemptCommand(prepCommand.cmd, prepCommand.args, 1);
-    if (result.status !== 0 && result.stderr?.includes('SqliteFailure')) {
-      console.log('Retrying with Nx disabled...');
-      result = attemptCommand(prepCommand.cmd, prepCommand.args, 2);
-    }
+    const result = runCommandWithFallback(prepCommand.cmd, prepCommand.args, [
+      '--ignore-scripts',
+      '--stream',
+    ]);
 
     const prepDuration = Date.now() - prepStart;
 
@@ -172,11 +189,10 @@ function runLernaBenchmark(
     process.stdout.write(`  Run ${i + 1}/${NUMBER_OF_RUNS}: `);
 
     const start = Date.now();
-    let result = attemptCommand(runCommand.cmd, runCommand.args, 1);
-    if (result.status !== 0 && result.stderr?.includes('SqliteFailure')) {
-      console.log('Retrying with Nx disabled...');
-      result = attemptCommand(runCommand.cmd, runCommand.args, 2);
-    }
+    const result = runCommandWithFallback(runCommand.cmd, runCommand.args, [
+      '--ignore-scripts',
+      '--stream',
+    ]);
     const duration = Date.now() - start;
 
     totalTime += duration;

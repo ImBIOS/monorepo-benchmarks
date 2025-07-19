@@ -36,7 +36,7 @@ function formatResults(results: BenchmarkResults): string {
   return `## Benchmark & Results (${date})
 
 Run \`pnpm run benchmark\`. The benchmark will warm the cache of all the tools. We benchmark how quickly
-Turbo/Nx/Lage/Lerna/Moon can figure out what needs to be restored from the cache and restores it.
+Turbo/Nx/Lerna/Lage/Moon can figure out what needs to be restored from the cache and restores it.
 
 These are the numbers using GitHub Actions runner:
 

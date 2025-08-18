@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.PAT_TOKEN }}
           fetch-depth: 0
@@ -40,7 +40,7 @@ jobs:
       has-changes: ${{ steps.changes.outputs.has-changes }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.PAT_TOKEN }}
           fetch-depth: 0
@@ -98,7 +98,7 @@ jobs:
     if: needs.update-dependencies.outputs.has-changes == 'true'
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.PAT_TOKEN }}
           fetch-depth: 0

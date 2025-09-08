@@ -268,7 +268,7 @@ jobs:
           git pull --rebase origin main
 
       - name: Create or update GitHub release
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.PAT_TOKEN }}
           script: |
@@ -339,7 +339,7 @@ jobs:
 
       - name: Create issue on significant performance regression
         if: needs.analysis.outputs.performance-regression == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');

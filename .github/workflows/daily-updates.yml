@@ -140,7 +140,7 @@ jobs:
 
       - name: Create PR for dependency updates
         if: steps.commit.outputs.has-commits == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.PAT_TOKEN }}
           script: |

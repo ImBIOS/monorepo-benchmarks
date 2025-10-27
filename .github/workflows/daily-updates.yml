@@ -27,7 +27,7 @@ jobs:
         run: pnpm install
 
       - name: Upload current lockfile
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: original-lockfile
           path: pnpm-lock.yaml
@@ -82,7 +82,7 @@ jobs:
 
       - name: Upload updated files
         if: steps.changes.outputs.has-changes == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: updated-files
           path: |

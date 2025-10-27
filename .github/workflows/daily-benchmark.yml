@@ -52,7 +52,7 @@ jobs:
         run: pnpm run build:scripts
 
       - name: Upload built scripts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: built-scripts
           path: dist/
@@ -108,7 +108,7 @@ jobs:
           node dist/scripts/benchmark-single-tool.js ${{ matrix.tool }} --output json > benchmark-results-${{ matrix.tool }}.json
 
       - name: Upload benchmark results for ${{ matrix.tool }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: benchmark-results-${{ matrix.tool }}
           path: benchmark-results-${{ matrix.tool }}.json
@@ -221,7 +221,7 @@ jobs:
           BENCHMARK_RESULTS: ${{ env.RESULTS_JSON }}
 
       - name: Upload analysis artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: analysis-results
           path: |
